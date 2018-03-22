@@ -124,5 +124,26 @@ The result is:
 结果为：
 ![](https://raw.githubusercontent.com/DickLiTQ/pyts/master/acfpacf.png)
 
+#### 根据AIC、BIC选取ARMA(p,q)阶数
+We calculate AIC or BIC under different ARMA(p,q) models to find order (p,q) when AIC or BIC take local minimum value. The estimation is based on Maximum Likelihood Estimation Method so in some case it cannot converge. For instance, we use ARMA(p,q) to fit data, where p is not larger than 3 and q is not larger than 3 and we choose AIC as our benchmark:
 
+原理是利用不同ARMA(p,q)下的AIC和BIC值来决定最优的p、q对，基于Maximum Likelihood Estimation，因此可能会得出不收敛的结果。
 
+```python
+def select_ARMA_order(data,max_ar,max_ma,ic):
+    return sm.tsa.arma_order_select_ic(data,max_ar=max_ar,max_ma=max_ma,ic=ic)
+```
+例如选择ARMA(p,q)模型取拟合data，其中p不大于3，q不大于3，以AIC为指标：
+```Python
+select_ARMA_order(data,3,3,'aic')
+```
+结果为
+```
+{'aic':             0           1           2           3
+ 0             725.521096  727.368619  727.420572  729.002785
+ 1             727.325969  728.806353  729.167261  730.875017
+ 2             727.409239  729.407495  731.071447         NaN
+ 3             729.405918         NaN  729.042475  719.520655,
+ 'aic_min_order': (3, 3)}
+```
+因此此时(3,3)是局部最优的。要运行这个函数，我们需要先验证时间序列是稳定的。
