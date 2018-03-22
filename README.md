@@ -122,8 +122,7 @@ acfpacf(data,40)
 The result is:
 
 结果为：
-
-
+![](https://raw.githubusercontent.com/DickLiTQ/pyts/master/acfpacf.png)
 
 
 
