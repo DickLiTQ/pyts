@@ -58,25 +58,30 @@ To develop a dataframe from such data, we give a loading function below:
 def load_txt(path,header):
     file = open(path,'r')
     lines = file.readlines()
+    firstline = lines[0]
+    variable = firstline.split()
     if header == "T":
-        firstline = lines[0]
-        variable = firstline.split()
         data = pd.DataFrame(columns=variable,index=range(len(lines[1:])))
+        for row, line in enumerate(lines[1:]):
+            text = line.split()
+            for var in range(len(variable)):
+                data.iloc[row,var]=text[var]
     else:
-        data = pd.DataFrame(index=range(len(lines)))
-    for row, line in enumerate(lines[1:]):
-        text = line.split()
-        for var in range(len(variable)):
-            data.iloc[row,var]=text[var]
-    return data
-
+        variable = np.arange(len(variable))
+        variable = list(variable)
+        data = pd.DataFrame(columns=variable,index=range(len(lines)))
+        for row, line in enumerate(lines):
+            text = line.split()
+            for var in range(len(variable)):
+                data.iloc[row,var]=text[var]
+    return data.apply(pd.to_numeric,errors="ignore")
 ```
 When the first row in txt file is used to indicate variables, we make _header_ equals "T" and then receive a dataframe with column names.
 
 当第一行是标题（变量）时，我们取header为"T"，可以得到一个包含这些数据内容的dataframe。
 
 #### Date index / 时间指标
-In time series analysis, index of date is quite important. From the txt file, we will obtain the datetime as columns named "year", "mon" and "day". A function is designed to get such datetimes and transfer them into a standard form of index. 
+In time series analysis, index of date is quite important. From the txt file, we will obtain the datetime as columns named "year", "mon" and "day". A function is designed to get such datetimes and transfer them into a standard form of index.
 
 时间序列分析中，数据的时间指标非常关键，使用从txt读取的数据可能会得到以上year、mon、day形式记录的日期，我们使用下列函数从dataframe中抽取year、month、day并建立time index到dataframe中。
 ```Python
@@ -121,29 +126,76 @@ acfpacf(data,40)
 ```
 The result is:
 
+
 结果为：
 ![](https://raw.githubusercontent.com/DickLiTQ/pyts/master/acfpacf.png)
 
-#### 根据AIC、BIC选取ARMA(p,q)阶数
-We calculate AIC or BIC under different ARMA(p,q) models to find order (p,q) when AIC or BIC take local minimum value. The estimation is based on Maximum Likelihood Estimation Method so in some case it cannot converge. For instance, we use ARMA(p,q) to fit data, where p is not larger than 3 and q is not larger than 3 and we choose AIC as our benchmark:
+#### Choose order (p,q) on AIC and BIC / 根据AIC、BIC选取ARMA(p,q)阶数
+We calculate AIC or BIC under different ARMA(p,q) models to find order (p,q) when AIC or BIC take local minimum value. The estimation is based on Maximum Likelihood Estimation Method so in some case it cannot converge.
 
 原理是利用不同ARMA(p,q)下的AIC和BIC值来决定最优的p、q对，基于Maximum Likelihood Estimation，因此可能会得出不收敛的结果。
 
-```python
+```Python
 def select_ARMA_order(data,max_ar,max_ma,ic):
-    return sm.tsa.arma_order_select_ic(data,max_ar=max_ar,max_ma=max_ma,ic=ic)
+    return sm.tsa.arma_order_select_ic(data,max_ar=max_ar,max_ma=max_ma,ic=ic
 ```
-例如选择ARMA(p,q)模型取拟合data，其中p不大于3，q不大于3，以AIC为指标：
+例如
 ```Python
 select_ARMA_order(data,3,3,'aic')
 ```
 结果为
 ```
 {'aic':             0           1           2           3
- 0             725.521096  727.368619  727.420572  729.002785
+ 0             725.521096  727.368619   727.420572  729.002785
  1             727.325969  728.806353  729.167261  730.875017
  2             727.409239  729.407495  731.071447         NaN
  3             729.405918         NaN  729.042475  719.520655,
  'aic_min_order': (3, 3)}
 ```
-因此此时(3,3)是局部最优的。要运行这个函数，我们需要先验证时间序列是稳定的。
+
+#### Build an ARMA(p,q) / 建立ARMA(p,q)模型
+According to our data and order (p,q), we can fit a ARMA(p,q) model.
+
+根据data和所得(p,q)获得ARMA(p,q)模型。
+```Python
+def ARMA(data,p,q):
+    return sm.tsa.ARMA(data,(p,q)).fit()
+```
+For example,
+
+例如，
+```Python
+model = ARMA(data,3,3)
+model.summary2()
+```
+The output is 
+
+可以得到模型的信息
+```
+Results: ARMA
+====================================================================
+Model:              ARMA             BIC:                 -219.5541 
+Dependent Variable: data             Log-Likelihood:      129.70    
+Date:               2018-03-22 20:30 Scale:               1.0000    
+No. Observations:   766              Method:              css-mle   
+Df Model:           5                Sample:              01-31-1948
+Df Residuals:       761                                   10-31-2011
+Converged:          1.0000           S.D. of innovations: 0.204     
+AIC:                -247.4012        HQIC:                -236.682  
+----------------------------------------------------------------------
+               Coef.    Std.Err.      t       P>|t|     [0.025   0.975]
+----------------------------------------------------------------------
+const         5.8372     0.7056     8.2729   0.0000    4.4543   7.2201
+ar.L1.data    0.9867     0.0060   164.8929   0.0000    0.9749   0.9984
+ma.L1.data    0.0356     0.0374     0.9517   0.3416   -0.0377   0.1090
+ma.L2.data    0.2046     0.0328     6.2346   0.0000    0.1403   0.2690
+ma.L3.data    0.1558     0.0367     4.2447   0.0000    0.0839   0.2278
+-----------------------------------------------------------------------------
+                Real           Imaginary          Modulus          Frequency
+-----------------------------------------------------------------------------
+AR.1            1.0135             0.0000           1.0135             0.0000
+MA.1            0.5256            -1.5614           1.6474            -0.1983
+MA.2            0.5256             1.5614           1.6474             0.1983
+MA.3           -2.3643            -0.0000           2.3643            -0.5000
+====================================================================
+```
