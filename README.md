@@ -130,6 +130,40 @@ The result is:
 结果为：
 ![](https://raw.githubusercontent.com/DickLiTQ/pyts/master/acfpacf.png)
 
+#### Test stationary / 检验数据稳定性
+Before we establish an ARMA(p,q) model, we are suppose to test whether the data is weak stationary. We examine it by Advanced Dickey Fuller (ADF) test.
+
+在我们建立一个ARMA(p,q)模型时，我们应当先检验数据是否符合弱平稳性。我们使用ADF检验来检验。
+```python
+def ADFuller(data,ic,ct):
+    t = adfuller(data,autolag=ic,regression=ct)
+    return {'ADF_statistics':t[0],
+    'p_value':t[1],
+    'lags':t[2],
+    'observation':t[3],
+    'critical_values':t[4],
+    'icbest':t[5]}
+```
+For example, we examine a column named "data" in our dataset, using AIC as the choice of lag and use the constant in c:
+
+例如我们检验data数据集中的某个名为data的列，使用AIC最小化作为选取lag的标准，考虑常数c：
+```python
+ADFuller(data['data'],'AIC','c')
+```
+The output is
+
+输出结果是
+```
+{'ADF_statistics': -2.6315992772570356,
+ 'critical_values': {'1%': -3.4390641198617864,
+  '10%': -2.5688179819544312,
+  '5%': -2.8653859408474482},
+ 'icbest': -348.21261544613162,
+ 'lags': 12,
+ 'observation': 753,
+ 'p_value': 0.086640606585698832}
+```
+
 #### Choose order (p,q) on AIC and BIC / 根据AIC、BIC选取ARMA(p,q)阶数
 We calculate AIC or BIC under different ARMA(p,q) models to find order (p,q) when AIC or BIC take local minimum value. The estimation is based on Maximum Likelihood Estimation Method so in some case it cannot converge.
 
@@ -139,10 +173,14 @@ We calculate AIC or BIC under different ARMA(p,q) models to find order (p,q) whe
 def select_ARMA_order(data,max_ar,max_ma,ic):
     return sm.tsa.arma_order_select_ic(data,max_ar=max_ar,max_ma=max_ma,ic=ic
 ```
+For instance,
+
 例如
 ```Python
 select_ARMA_order(data,3,3,'aic')
 ```
+The output is
+
 结果为
 ```
 {'aic':             0           1           2           3
