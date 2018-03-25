@@ -184,11 +184,11 @@ The output is
 结果为
 ```
 {'aic':             0           1           2           3
- 0             725.521096  727.368619   727.420572  729.002785
- 1             727.325969  728.806353  729.167261  730.875017
- 2             727.409239  729.407495  731.071447         NaN
- 3             729.405918         NaN  729.042475  719.520655,
- 'aic_min_order': (3, 3)}
+   0           725.521096  727.368619  727.420572  729.002785
+   1           727.325969  728.806353  729.167261  730.875017
+   2           727.409239  729.407495  731.071447         NaN
+   3           729.405918         NaN  729.042475  719.520655,
+ 'aic_min_order': (3, 3)                                      }
 ```
 
 #### Build an ARMA(p,q) / 建立ARMA(p,q)模型
@@ -271,3 +271,20 @@ def LjungBox_ARMA(data,p,q,lag):
 We are required to calculate the residual manually while using *LjungBox()*. If our model is ARMA(p,q), we can use *LjungBox_ARMA()* for confidence.
 
 如果使用*LjungBox()*，我们需要手动计算残差。如果我们的模型是ARMA(p,q)模型，则可以使用*LjungBox_ARMA()*。
+
+#### Backtest / 进行Backtest
+backtest is an important method in out-sample test.
+
+backtest是out-sample test中的重要手段，是选取模型的标准之一。我们定义backtest函数：
+
+```python
+def backtest(data,p,q,startpoint,IC):
+    MSFE = 0
+    predict = 0
+    for i in range(1,len(data)-startpoint):
+        predict = ARMA(data[i:],p,q).forecast(1)[0]
+        MSFE = MSFE + (predict-ARMA(data[i:],1,0).fittedvalues[-1])**2
+        data[startpoint+i] = predict
+    return MSFE/(len(data)-startpoint)
+```
+
