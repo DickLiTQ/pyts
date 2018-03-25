@@ -171,7 +171,7 @@ We calculate AIC or BIC under different ARMA(p,q) models to find order (p,q) whe
 
 ```Python
 def select_ARMA_order(data,max_ar,max_ma,ic):
-    return sm.tsa.arma_order_select_ic(data,max_ar=max_ar,max_ma=max_ma,ic=ic
+    return sm.tsa.arma_order_select_ic(data,max_ar=max_ar,max_ma=max_ma,ic=ic)
 ```
 For instance,
 
@@ -251,5 +251,23 @@ array([ 8.63304374,  8.55667961,  8.49778608,  8.46231854,  8.4273238 ,
         8.39279556,  8.35872761,  8.3251138 ,  8.29194808,  8.25922447])
 ```
 
+#### LjungBox Test / 进行LjungBox检验
+Usually we use LjungBox to test the correlation of time series residual.
 
+常使用LjungBox来检验时间序列模型残差相关性。
+```python
+def LjungBox(residual,lag):
+    t = acorr_ljungbox(residual,lags=lag)
+    acfpacf(residual,lag)
+    return {'LB_statistics': t[0],'p_value': t[1]}
 
+def LjungBox_ARMA(data,p,q,lag):
+    model = ARMA(data,p,q)
+    residual = model.fittedvalues - data
+    t = acorr_ljungbox(residual,lags=lag)
+    acfpacf(residual,lag)
+    return {'LB_statistics': t[0],'p_value': t[1]}
+```
+We are required to calculate the residual manually while using *LjungBox()*. If our model is ARMA(p,q), we can use *LjungBox_ARMA()* for confidence.
+
+如果使用*LjungBox()*，我们需要手动计算残差。如果我们的模型是ARMA(p,q)模型，则可以使用*LjungBox_ARMA()*。
