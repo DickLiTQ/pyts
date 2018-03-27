@@ -280,11 +280,16 @@ backtest是out-sample test中的重要手段，是选取模型的标准之一。
 ```python
 def backtest(data,p,q,startpoint,IC):
     MSFE = 0
-    predict = 0
-    for i in range(1,len(data)-startpoint):
-        predict = ARMA(data[i:],p,q).forecast(1)[0]
-        MSFE = MSFE + (predict-ARMA(data[i:],1,0).fittedvalues[-1])**2
-        data[startpoint+i] = predict
+#    predict = 0
+    startpoint = startpoint - 1 # i th elements has an index of i-1
+    test = np.zeros_like(data)
+    train = np.zeros_like(data)
+    test[startpoint:] = data[startpoint:]
+    train[:startpoint] = data[:startpoint]
+    for i in range(len(data)-startpoint):
+        predict = ARMA(train[i:startpoint+i],p,q).forecast(1)[0]
+        MSFE = MSFE + (predict-test[startpoint+i])**2
+        train[startpoint+i] = predict
     return MSFE/(len(data)-startpoint)
 ```
 
