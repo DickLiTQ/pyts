@@ -268,7 +268,7 @@ def LjungBox_ARMA(data,p,q,lag):
     acfpacf(residual,lag)
     return {'LB_statistics': t[0],'p_value': t[1]}
 ```
-We are required to calculate the residual manually while using *LjungBox()*. If our model is ARMA(p,q), we can use *LjungBox_ARMA()* for confidence.
+We are required to calculate the residual manually while using *LjungBox()*. If our model is ARMA(p,q), we can use *LjungBox_ARMA()* for convenience.
 
 如果使用*LjungBox()*，我们需要手动计算残差。如果我们的模型是ARMA(p,q)模型，则可以使用*LjungBox_ARMA()*。
 
